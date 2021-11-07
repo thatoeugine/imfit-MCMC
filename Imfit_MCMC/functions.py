@@ -112,7 +112,7 @@ def data_model_residual_comparisson_plot(image, header, wcs, sigma, sampler):
 
     #Creating 1 row and 3 columns grid
     gs = matplotlib.gridspec.GridSpec(1, 3) 
-    fig = plt.figure(figsize=(26,7))
+    fig = plt.figure(figsize=(30,9))
 
     '''Plot 1'''
     ax1=plt.subplot(gs[0,0], projection=wcs)
