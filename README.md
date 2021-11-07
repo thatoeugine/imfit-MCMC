@@ -5,7 +5,9 @@ This software is created to automate the flux density, and source size of stacke
 
 ### Requirements:
 
-ILIFU cluster
+[ILIFU](http://docs.ilifu.ac.za/#/) cluster
 
 ### To run
+```python
 python Mastercode.py Params.ini
+```
