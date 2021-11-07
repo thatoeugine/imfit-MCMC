@@ -257,9 +257,8 @@ Int_flux = np.percentile(ft.Integrated_flux(image,header,sigma, sampler)*1e3, 50
 
 Int_flux_err = ((np.percentile(ft.Integrated_flux(image,header,sigma, sampler)*1e3, 84)-np.percentile(ft.Integrated_flux(image,header,sigma, sampler)*1e3, 16))/2.) #mJy
 
-results_dictionary = {'Int_flux (mJy)': Int_flux, 'Int_flux_err (mJy)': Int_flux_err, 'Minor (arcsec)': FWHM_x, 
-                      'Minor_err (arcsec)': FWHM_x_err , 'Major (arcsec)': FWHM_y ,'Major_err (arcsec)': FWHM_y_err, 
-                      'size (arcsec^2)': FWHM_y*FWHM_x , 'size_err (arcsec^2)': FWHM_y_err*FWHM_x_err}
+results_dictionary = {'Int_flux(mJy)': Int_flux, 'Int_flux_err(mJy)': Int_flux_err, 'Minor(arcsec)': FWHM_x, 
+                      'Minor_err(arcsec)': FWHM_x_err , 'Major(arcsec)': FWHM_y ,'Major_err(arcsec)': FWHM_y_err}
 
 df = pd.DataFrame(results_dictionary, index=[0])
 df.to_csv(PATH+'fit_results.csv')
