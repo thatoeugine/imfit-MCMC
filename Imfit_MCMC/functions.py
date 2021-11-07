@@ -18,6 +18,21 @@ from matplotlib.patches import Ellipse
 import configparser
 import sys
 
+params = {'legend.fontsize': 12,
+          'axes.labelsize': 14,
+          'axes.titlesize': 12,
+          'xtick.labelsize' :14,
+          'ytick.labelsize': 14,
+          'mathtext.fontset': 'cm',
+          'mathtext.rm': 'serif',
+          'mathtext.bf': 'serif:bold',
+          'mathtext.it': 'serif:italic',
+          'mathtext.sf': 'sans\\-serif',
+          'grid.color': 'k',
+          'grid.linestyle': ':',
+          'grid.linewidth': 0.5,
+         }
+matplotlib.rcParams.update(params)
 
 config = configparser.ConfigParser()
 config.read(sys.argv[-1])
@@ -107,7 +122,7 @@ def data_model_residual_comparisson_plot(image, header, wcs, sigma, sampler):
     ax1.tick_params(direction='out', length=5) 
     cbar1 = plt.colorbar(im1, pad=0.0, label = 'Flux Density  ($\mu$Jy/beam)')
     ax1.contour(image*1e6, colors='white',levels = [sigma,2*sigma,3*sigma,4*sigma,5*sigma],linewidths= 0.4)
-    ax1.set_title("Image data")
+    ax1.set_title("Image data", fontsize = 16)
 
     #Beam size
     #Beam size
@@ -132,7 +147,7 @@ def data_model_residual_comparisson_plot(image, header, wcs, sigma, sampler):
     ax2.set_ylabel('DEC(J2000)')
     ax2.tick_params(direction='out', length=5) 
     cbar2 = plt.colorbar(im2, pad=0.0, label = 'Flux Density  ($\mu$Jy/beam)')
-    ax2.set_title("Model image")
+    ax2.set_title("Model image", fontsize = 16)
 
     '''Plot 3'''
     ax3=plt.subplot(gs[0,2], projection=wcs)
@@ -142,7 +157,7 @@ def data_model_residual_comparisson_plot(image, header, wcs, sigma, sampler):
     ax3.tick_params(direction='out', length=5) 
     cbar3 = plt.colorbar(im3, pad=0.0, label = 'Flux Density  ($\mu$Jy/beam)')
     ax3.contour((image-bestmodel)*1e6, colors='black',levels = [sigma,2*sigma,3*sigma,4*sigma,5*sigma],linewidths= 0.4)
-    ax3.set_title("Residual image")
+    ax3.set_title("Residual image", fontsize = 16)
 
     plt.savefig(PATH+'datamodelresid.png',dpi=300, bbox_inches='tight')
 
@@ -180,3 +195,4 @@ def Integrated_flux(image, header, sigma, sampler):
             Fluxsum.append(image.ravel()[i])
     Int_Flux = np.sum(Fluxsum)/beam2pix # Source https://www.eaobservatory.org/jcmt/faq/how-can-i-convert-from-mjybeam-to-mjy/
     return Int_Flux.value
+
