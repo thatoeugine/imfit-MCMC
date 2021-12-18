@@ -38,7 +38,7 @@ config = configparser.ConfigParser()
 config.read(sys.argv[-1])
 
 PATH = config.get('pipeline', 'data_path') 
-image, header =pf.getdata(PATH+config.get('flux_Lumi_SFR_culculations', 'stackedimage'), header = True)
+image, header =pf.getdata(PATH+config.get('imfitMCMC', 'fitsname'), header = True)
 image = image[0,0,:,:]
 wcs = WCS(header).celestial
 wcs.celestial 
