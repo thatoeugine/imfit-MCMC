@@ -9,5 +9,5 @@ This software is created to automate the flux density, and source size of stacke
 
 ### To run
 ```python
-python Mastercode.py Params.ini
+python imfit_mcmc.py Params.ini
 ```
