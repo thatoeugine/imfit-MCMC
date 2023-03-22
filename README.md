@@ -11,3 +11,7 @@ This software is created to automate the flux density, and source size of stacke
 ```python
 python imfit_mcmc.py Params.ini
 ```
+
+### Notes:
+1) The code requires the images to be in '.fit' extension.
+2) Images should be in the data-path
