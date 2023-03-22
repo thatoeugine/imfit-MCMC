@@ -4,7 +4,7 @@
 imfit-MCM
 ---------
 Author:Thato Manamela  
-Version: 2021
+Version: 2023
 
 -------------------------------------------------------------------------------------------------
 This code samples a 2D Gaussian function to accurately estimate the flux density and source size
@@ -31,24 +31,13 @@ import functions as ft
 import pandas  as pd
 import configparser
 import sys
+import glob
 
 
 
 config = configparser.ConfigParser()
 config.read(sys.argv[-1])
 
-PATH = config.get('pipeline', 'data_path') 
-image, header =pf.getdata(PATH+config.get('imfitMCMC', 'fitsname'), header = True)
-image = image[0,0,:,:]
-wcs = WCS(header).celestial
-wcs.celestial 
-mean, median, std = sigma_clipped_stats(image, sigma=3.0)
-sigma = std
-
-try:
-    pixscale = header['CDELT2']*3600 # arcsec
-except KeyError:
-    pixscale = header['CD2_2']*3600 # arcsec
 
 
 
@@ -218,47 +207,69 @@ def main_mcmc(p0, ndim, lnprob, nwalkers = 12 , niter = 500):
     return sampler, pos, prob, state
 
 
-# PreMCMC-fit:
-popt = PreMCMC_fit(image) 
-initial =popt.pre_mcmc_fit() # inintial paramters
-
-# The actual MCMC:
-ndim = len(initial)
-nwalkers = 240
-p0 = [initial*(1.+1.e-3*np.random.randn(ndim)) for i in range(nwalkers)]
-sampler, pos, prob, state = main_mcmc(p0, ndim, Gaussian_Model(image,sigma), nwalkers, niter = 1200) 
-#----------------------
-# Plot of MCMC results:
-#----------------------
-# Corner plot for each parameter explored by the walkers.
+PATH = config.get('pipeline', 'data_path') 
+imfit_images = glob.glob(PATH + "*.fits")
 
 
-ft.corner_plot(sampler, pixscale)
 
-# Trace plot
-ft.plot_trace(sampler, nwalkers, pixscale)
+for image_ in imfit_images:
+    
+    image, header =pf.getdata(image_, header = True)
+    image = image[0,0,:,:]
+    wcs = WCS(header).celestial
+    wcs.celestial 
+    mean, median, std = sigma_clipped_stats(image, sigma=3.0)
+    sigma = std
 
-# data - model = residual data plot
-ft.data_model_residual_comparisson_plot(image, header, wcs, sigma, sampler)
+    try:
+        pixscale = header['CDELT2']*3600 # arcsec
+    except KeyError:
+        pixscale = header['CD2_2']*3600 # arcsec
+
+    
+    # PreMCMC-fit:
+    popt = PreMCMC_fit(image) 
+    initial =popt.pre_mcmc_fit() # inintial paramters
+
+    # The actual MCMC:
+    ndim = len(initial)
+    nwalkers = 240
+    p0 = [initial*(1.+1.e-3*np.random.randn(ndim)) for i in range(nwalkers)]
+    sampler, pos, prob, state = main_mcmc(p0, ndim, Gaussian_Model(image,sigma), nwalkers, niter = 1200) 
+    
+    #----------------------
+    # Plot of MCMC results:
+    #----------------------
+    # Corner plot for each parameter explored by the walkers.
+    ft.corner_plot(sampler, pixscale, plotname = image_+'_cornerplot.pdf')
+
+    # Trace plot
+    #ft.plot_trace(sampler, nwalkers, pixscale, plotname = = image_+'_traceplot.pdf')
+
+    # data - model = residual data plot
+    #ft.data_model_residual_comparisson_plot(image, header, wcs, sigma, sampler,
+    #                                        plotname=image_+'_datamodelplot.pdf')
 
 
-#----------------------
-# Saving results to file:
-#----------------------
-# Converting peak flux to Integrated, sigmaX, sigmaY FWHM_y, FWHM_x:
+    #----------------------
+    # Saving results to file:
+    #----------------------
+    # Converting peak flux to Integrated, sigmaX, sigmaY FWHM_y, FWHM_x:
 
-FWHM_x = np.percentile((2.*sampler.flatchain[:,3]*(2.*np.log(2.))**0.5)*pixscale, 50) # Minor-axis in arcsec
-FWHM_y = np.percentile((2.*sampler.flatchain[:,4]*(2.*np.log(2.))**0.5)*pixscale, 50) #  Major-axis in arcsec
+    FWHM_x = np.percentile((2.*sampler.flatchain[:,3]*(2.*np.log(2.))**0.5)*pixscale, 50) # Minor-axis in arcsec
+    FWHM_y = np.percentile((2.*sampler.flatchain[:,4]*(2.*np.log(2.))**0.5)*pixscale, 50) #  Major-axis in arcsec
 
-FWHM_x_err = ((np.percentile((2.*sampler.flatchain[:,3]*(2.*np.log(2.))**0.5)*pixscale, 84)-np.percentile((2.*sampler.flatchain[:,3]*(2.*np.log(2.))**0.5)*pixscale, 16))/2.) # Minor-axis in arcsec
-FWHM_y_err = ((np.percentile((2.*sampler.flatchain[:,4]*(2.*np.log(2.))**0.5)*pixscale, 84)-np.percentile((2.*sampler.flatchain[:,4]*(2.*np.log(2.))**0.5)*pixscale, 16))/2.) # Minor-axis in arcsec
+    FWHM_x_err = ((np.percentile((2.*sampler.flatchain[:,3]*(2.*np.log(2.))**0.5)*pixscale, 84)-np.percentile((2.*sampler.flatchain[:,3]*(2.*np.log(2.))**0.5)*pixscale, 16))/2.) # Minor-axis in arcsec
+    FWHM_y_err = ((np.percentile((2.*sampler.flatchain[:,4]*(2.*np.log(2.))**0.5)*pixscale, 84)-np.percentile((2.*sampler.flatchain[:,4]*(2.*np.log(2.))**0.5)*pixscale, 16))/2.) # Minor-axis in arcsec
 
-Int_flux = np.percentile(ft.Integrated_flux(image,header,sigma, sampler)*1e3, 50) #mJy
+    Int_flux = np.percentile(ft.Integrated_flux(image,header,sigma, sampler)*1e3, 50) #mJy
 
-Int_flux_err = ((np.percentile(ft.Integrated_flux(image,header,sigma, sampler)*1e3, 84)-np.percentile(ft.Integrated_flux(image,header,sigma, sampler)*1e3, 16))/2.) #mJy
+    Int_flux_err = ((np.percentile(ft.Integrated_flux(image,header,sigma, sampler)*1e3, 84)-np.percentile(ft.Integrated_flux(image,header,sigma, sampler)*1e3, 16))/2.) #mJy
 
-results_dictionary = {'Int_flux(mJy)': Int_flux, 'Int_flux_err(mJy)': Int_flux_err, 'Minor(arcsec)': FWHM_x, 
-                      'Minor_err(arcsec)': FWHM_x_err , 'Major(arcsec)': FWHM_y ,'Major_err(arcsec)': FWHM_y_err}
+    Peak_flux = np.percentile(sampler.flatchain[:,0]*1e3, 50)
+    Peak_flux_err = ((np.percentile(sampler.flatchain[:,0]*1e3, 84)-np.percentile(sampler.flatchain[:,0]*1e3, 16))/2.)
 
-df = pd.DataFrame(results_dictionary, index=[0])
-df.to_csv(PATH+'fit_results.csv')
+    results_dictionary = {'Int_flux(mJy)': Int_flux, 'Int_flux_err(mJy)': Int_flux_err, 'Peak(mJy)': Peak_flux, 'Peak_err(mJy)': Peak_flux_err, 
+                          'Minor(arcsec)': FWHM_x, 'Minor_err(arcsec)': FWHM_x_err , 'Major(arcsec)': FWHM_y ,'Major_err(arcsec)': FWHM_y_err}
+    df = pd.DataFrame(results_dictionary, index=[0])
+    df.to_csv(image_+'_fit_results.csv')
