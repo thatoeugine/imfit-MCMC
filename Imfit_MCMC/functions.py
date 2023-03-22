@@ -17,22 +17,29 @@ from astropy.coordinates import SkyCoord
 from matplotlib.patches import Ellipse
 import configparser
 import sys
+import seaborn as sns
+
+sns.set_style("whitegrid")
+
 
 params = {'legend.fontsize': 12,
-          'axes.labelsize': 14,
-          'axes.titlesize': 12,
-          'xtick.labelsize' :14,
-          'ytick.labelsize': 14,
+          'axes.labelsize': 15,
+          'axes.titlesize': 15,
+          'axes.linewidth': 0.5,
+          'axes.edgecolor': '.15',
+          'xtick.labelsize' :15,
+          'ytick.labelsize': 15,
           'mathtext.fontset': 'cm',
           'mathtext.rm': 'serif',
           'mathtext.bf': 'serif:bold',
           'mathtext.it': 'serif:italic',
           'mathtext.sf': 'sans\\-serif',
-          'grid.color': 'k',
-          'grid.linestyle': ':',
-          'grid.linewidth': 0.5,
          }
 matplotlib.rcParams.update(params)
+
+
+
+
 
 config = configparser.ConfigParser()
 config.read(sys.argv[-1])
@@ -40,7 +47,10 @@ config.read(sys.argv[-1])
 PATH = config.get('pipeline', 'data_path') 
 
 
-def corner_plot(sampler, pixscale):
+
+
+
+def corner_plot(sampler, pixscale, plotname):
     """
     Corner plot for each parameter explored by the walkers.
     """
@@ -50,12 +60,14 @@ def corner_plot(sampler, pixscale):
                       sampler.flatchain[:,2]*pixscale,sampler.flatchain[:,3]*pixscale,
                       sampler.flatchain[:,4]*pixscale, sampler.flatchain[:,5]*1e6])          
     fig = corner.corner(posterior_samples.T, labels=labels,show_titles=True,
-                    label_kwargs={"fontsize": 10}, title_kwargs={"fontsize": 10}, quantiles=[0.16, 0.5, 0.84]);
-    fig.savefig(PATH+"cornerplot.png", dpi=300)
+                    label_kwargs={"fontsize": 13}, title_kwargs={"fontsize": 13}, quantiles=[0.16, 0.5, 0.84]);
+    fig.savefig(plotname, dpi = 400)
+    plt.clf()
+    plt.close(fig)
 
 
 
-def plot_trace(sampler, nwalkers, pixscale):
+def plot_trace(sampler, nwalkers, pixscale, plotname):
     """
     Plot the trace of walkers for every steps
     """
@@ -64,14 +76,17 @@ def plot_trace(sampler, nwalkers, pixscale):
     multiplier = [1e6, pixscale, pixscale, pixscale, pixscale, 1e6]
 
     fig, ax = plt.subplots(len(labels), sharex=True)
-    ax[0].set_title("Number of walkers: "+str(nwalkers), fontsize=15)
+    ax[0].set_title("Number of walkers: "+str(nwalkers), fontsize=20)
     for i in range(len(ax)):
         ax[i].plot(sampler.chain[:, :, i].T*multiplier[i], "-k", alpha=0.2)
         ax[i].set_ylabel(labels[i])
         fig.set_size_inches(2*10,15)
-
-    plt.xlabel("steps", fontsize=15)
-    plt.savefig(PATH+"walker_plot.png", dpi=300)
+        ax[i].tick_params(labelsize=15)
+    
+    plt.xlabel("steps", fontsize=20)
+    plt.savefig(plotname, dpi = 400)
+    plt.clf()
+    plt.close(fig)
 
 
 def twoD_Gaussian(image_data, amplitude, xo, yo, sigma_x, sigma_y, offset):
@@ -87,7 +102,7 @@ def twoD_Gaussian(image_data, amplitude, xo, yo, sigma_x, sigma_y, offset):
         return g
 
 
-def data_model_residual_comparisson_plot(image, header, wcs, sigma, sampler):
+def data_model_residual_comparisson_plot(image, header, wcs, sigma, sampler, plotname):
     """
     data - model = residual data plot
     Parameters:
@@ -100,7 +115,7 @@ def data_model_residual_comparisson_plot(image, header, wcs, sigma, sampler):
     sampler : array
             MCMC sampler
     """
-    
+
     # calculating median of parameters
     bestamp = np.median(sampler.flatchain[:,0]) 
     bestx0 = np.median(sampler.flatchain[:,1]) 
@@ -112,27 +127,30 @@ def data_model_residual_comparisson_plot(image, header, wcs, sigma, sampler):
 
     #Creating 1 row and 3 columns grid
     gs = matplotlib.gridspec.GridSpec(1, 3) 
-    fig = plt.figure(figsize=(30,9))
+    fig = plt.figure(figsize=(38,9))
 
     '''Plot 1'''
     ax1=plt.subplot(gs[0,0], projection=wcs)
-    im1 = ax1.imshow(image*1e6,cmap='cividis', origin='lower', vmax = image.max()*1e6, vmin = image.min()*1e6)
-    ax1.set_xlabel('RA(J2000)')
-    ax1.set_ylabel('DEC(J2000)')
-    ax1.tick_params(direction='out', length=5) 
-    cbar1 = plt.colorbar(im1, pad=0.0, label = 'Flux Density  ($\mu$Jy/beam)')
+    im1 = ax1.imshow(image*1e6,cmap='Spectral_r', origin='lower', vmax = image.max()*1e6, vmin = image.min()*1e6)
+    ax1.set_xlabel('RA(J2000)', fontsize = 20)
+    ax1.set_ylabel('DEC(J2000)', fontsize = 20)
+    cbar1 = plt.colorbar(im1, pad=0.0)
+    cbar1.set_label(label = 'Flux Density  ($\mu$Jy/beam)', fontsize = 20)
+    cbar1.ax.tick_params(labelsize=18)
     ax1.contour(image*1e6, colors='white',levels = [sigma,2*sigma,3*sigma,4*sigma,5*sigma],linewidths= 0.4)
-    ax1.set_title("Image data", fontsize = 16)
+    ax1.set_title("Image", fontsize = 20, weight = 'bold')
+    ax1.tick_params(labelsize=20, axis = 'both') 
 
-    #Beam size
+
+    
     #Beam size
     def draw_ellipse(ax, width, height, angle):
         """
-        Draw an ellipse of width=0.1, height=0.15 in data coordinates
+        Draw an ellipse of the size of the Telescope's Primary Beam
         """
         from mpl_toolkits.axes_grid1.anchored_artists import AnchoredEllipse
         ae = AnchoredEllipse(ax.get_transform('fk5'), width, height, angle,
-                             loc='lower left', pad=0.5, borderpad=0.4, frameon=False)
+                             loc='lower left', pad=0.5, borderpad=0.4, frameon=True)
 
         ax.add_artist(ae)
 
@@ -142,29 +160,36 @@ def data_model_residual_comparisson_plot(image, header, wcs, sigma, sampler):
 
     '''Plot 2'''
     ax2=plt.subplot(gs[0,1], projection=wcs)
-    im2 = ax2.imshow(bestmodel*1e6,cmap='cividis', origin='lower')
-    ax2.set_xlabel('RA(J2000)')
-    ax2.set_ylabel('DEC(J2000)')
-    ax2.tick_params(direction='out', length=5) 
-    cbar2 = plt.colorbar(im2, pad=0.0, label = 'Flux Density  ($\mu$Jy/beam)')
-    ax2.set_title("Model image", fontsize = 16)
+    im2 = ax2.imshow(bestmodel*1e6,cmap='Spectral_r', origin='lower')
+    ax2.set_xlabel('RA(J2000)',  fontsize = 20)
+    ax2.set_ylabel('DEC(J2000)',  fontsize = 20)
+    cbar2 = plt.colorbar(im2, pad=0.0)
+    cbar2.set_label(label = 'Flux Density  ($\mu$Jy/beam)', fontsize = 20)
+    cbar2.ax.tick_params(labelsize=20)
+    ax2.set_title("Model", fontsize = 20, weight = 'bold')
+    ax2.tick_params(labelsize=20, axis = 'both') 
+
+
 
     '''Plot 3'''
     ax3=plt.subplot(gs[0,2], projection=wcs)
     im3 = ax3.imshow((image-bestmodel)*1e6,cmap='PuOr_r', origin='lower')
-    ax3.set_xlabel('RA(J2000)')
-    ax3.set_ylabel('DEC(J2000)')
-    ax3.tick_params(direction='out', length=5) 
-    cbar3 = plt.colorbar(im3, pad=0.0, label = 'Flux Density  ($\mu$Jy/beam)')
-    ax3.contour((image-bestmodel)*1e6, colors='black',levels = [sigma,2*sigma,3*sigma,4*sigma,5*sigma],linewidths= 0.4)
-    ax3.set_title("Residual image", fontsize = 16)
+    ax3.set_xlabel('RA(J2000)', fontsize = 20)
+    ax3.set_ylabel('DEC(J2000)', fontsize = 20)
+    cbar3 = plt.colorbar(im3, pad=0.0)
+    cbar3.set_label(label = 'Flux Density  ($\mu$Jy/beam)', fontsize = 20)
+    cbar3.ax.tick_params(labelsize = 20)
+    ax3.contour((image-bestmodel)*1e6, colors = 'black',levels = [sigma,2*sigma,3*sigma,4*sigma,5*sigma],linewidths = 0.4)
+    ax3.set_title("Residual", fontsize = 20, weight = 'bold')
+    ax3.tick_params(labelsize=20, axis = 'both') 
+    
+    plt.savefig(plotname, dpi = 400)
+    
 
-    plt.savefig(PATH+'datamodelresid.png',dpi=300, bbox_inches='tight')
-
-
+    
 def Integrated_flux(image, header, sigma, sampler):
     """
-    Computes the tatol flux density of a detection
+    Computes the total flux density of a detection
     
     Parameters:
     ----------
@@ -180,7 +205,7 @@ def Integrated_flux(image, header, sigma, sampler):
 
     """
     pixscale = abs(header['CDELT1'])*u.deg
-    bmaj      = (2.*sampler.flatchain[:,3]*(2.*np.log(2.))**0.5)*pixscale
+    bmaj      = (2.*sampler.flatchain[:,4]*(2.*np.log(2.))**0.5)*pixscale
     bmin      = (2.*sampler.flatchain[:,3]*(2.*np.log(2.))**0.5)*pixscale
 
     beammaj        = bmaj/(2.*(2.*np.log(2.))**0.5) # Convert to sigma
@@ -195,4 +220,3 @@ def Integrated_flux(image, header, sigma, sampler):
             Fluxsum.append(image.ravel()[i])
     Int_Flux = np.sum(Fluxsum)/beam2pix # Source https://www.eaobservatory.org/jcmt/faq/how-can-i-convert-from-mjybeam-to-mjy/
     return Int_Flux.value
-
