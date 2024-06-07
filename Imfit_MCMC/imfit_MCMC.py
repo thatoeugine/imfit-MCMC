@@ -244,11 +244,11 @@ for image_ in imfit_images:
     ft.corner_plot(sampler, pixscale, plotname = image_+'_cornerplot.pdf')
 
     # Trace plot
-    #ft.plot_trace(sampler, nwalkers, pixscale, plotname = = image_+'_traceplot.pdf')
+    ft.plot_trace(sampler, nwalkers, pixscale, plotname = image_+'_traceplot.pdf')
 
     # data - model = residual data plot
-    #ft.data_model_residual_comparisson_plot(image, header, wcs, sigma, sampler,
-    #                                        plotname=image_+'_datamodelplot.pdf')
+    ft.data_model_residual_comparisson_plot(image, header, wcs, sigma, sampler,
+                                            plotname=image_+'_datamodelplot.pdf')
 
 
     #----------------------
